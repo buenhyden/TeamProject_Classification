@@ -120,10 +120,9 @@ def Load_DataSet():
 
 def run(train, test, random_state=0):
     eta = 1.3
-    max_depth = 3
+    max_depth = 5
     subsample = 0.8
     colsample_bytree = 0.8
-    start_time = time.time()
     params ={
         "objective": "binary:logistic",
         "booster" : "gbtree",
@@ -136,7 +135,7 @@ def run(train, test, random_state=0):
     }
     num_boost_round = 120
     early_stopping_rounds = 10
-    test_size = 0.1
+    test_size = 0.15
     X_train, X_valid = train_test_split(train, test_size=test_size, random_state=random_state)
     y_train = X_train['outcome']
     y_valid = X_valid['outcome']
