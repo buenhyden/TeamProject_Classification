@@ -118,11 +118,12 @@ def Load_DataSet():
     return trainMerge, testMerge
 
 
+
 def run(train, test, random_state=0):
     eta = 1.3
-    max_depth = 5
-    subsample = 0.8
-    colsample_bytree = 0.8
+    max_depth = 3
+    subsample = 0.80
+    colsample_bytree = 0.80
     params ={
         "objective": "binary:logistic",
         "booster" : "gbtree",
@@ -133,9 +134,9 @@ def run(train, test, random_state=0):
         "silent":1,
         "seed": random_state
     }
-    num_boost_round = 120
+    num_boost_round = 150
     early_stopping_rounds = 10
-    test_size = 0.15
+    test_size = 0.1
     X_train, X_valid = train_test_split(train, test_size=test_size, random_state=random_state)
     y_train = X_train['outcome']
     y_valid = X_valid['outcome']
@@ -157,17 +158,12 @@ def run(train, test, random_state=0):
     out.rename({0:'outcome'},axis = 1, inplace = True)
     return out
 
+
+
 def Main():
     train, test = Load_DataSet()
     out = run(train,test)
     out.to_csv('./submission7.csv',index = False)
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
