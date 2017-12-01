@@ -18,30 +18,6 @@ from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier
 from sklearn.preprocessing import LabelEncoder
 import xgboost
 
-def create_feature_map(features):
-    outfile = open('xgb.fmap', 'w')
-    for i, feat in enumerate(features):
-        outfile.write('{0}\t{1}\tq\n'.format(i, feat))
-    outfile.close()
-
-
-def get_importance(gbm, features):
-    create_feature_map(features)
-    importance = gbm.get_fscore(fmap='xgb.fmap')
-    importance = sorted(importance.items(), key=itemgetter(1), reverse=True)
-    return importance
-
-
-def intersect(a, b):
-    return list(set(a) & set(b))
-
-
-def get_features(train, test):
-    trainval = list(train.columns.values)
-    testval = list(test.columns.values)
-    output = intersect(trainval, testval)
-    output.remove('people_id')
-    return sorted(output)
 
 def Load_DataSet():
     print ("loading .....  act_train")
@@ -116,58 +92,3 @@ def Load_DataSet():
     testMerge['weekend_y'] = ((testMerge.weekday_y == 0) | (testMerge.weekday_y == 6)).astype(int)
     testMerge = testMerge.drop('date_y', axis = 1)
     return trainMerge, testMerge
-
-
-
-def run(train, test, random_state=0):
-    eta = 1.3
-    max_depth = 3
-    subsample = 0.8
-    colsample_bytree = 0.8
-    params ={
-        "objective": "binary:logistic",
-        "booster" : "gbtree",
-        "eval_metric": "auc",
-        "max_depth" : max_depth,
-        "subsample": subsample,
-        "colsample_bytree": colsample_bytree,
-        "silent":1,
-        "seed": random_state
-    }
-    num_boost_round = 130
-    early_stopping_rounds = 10
-    test_size = 0.1
-    X_train, X_valid = train_test_split(train, test_size=test_size, random_state=random_state)
-    y_train = X_train['outcome']
-    y_valid = X_valid['outcome']
-    X_train = X_train.drop(['people_id','activity_id','outcome'], axis = 1)
-    X_valid = X_valid.drop(['people_id','activity_id','outcome'], axis = 1)
-    dtrain = xgb.DMatrix(X_train, y_train)
-    dvalid = xgb.DMatrix(X_valid, y_valid)
-    watchlist = [(dtrain, 'train'), (dvalid, 'eval')]
-    gbm = xgb.train(params, dtrain, num_boost_round, evals=watchlist, early_stopping_rounds=early_stopping_rounds, verbose_eval=True)
-
-    check = gbm.predict(xgb.DMatrix(X_valid), ntree_limit=gbm.best_iteration+1)
-    score = roc_auc_score(y_valid, check)
-    testActivityId = test['activity_id']
-    test = test.drop(['people_id','activity_id'],axis = 1)
-    test_prediction = gbm.predict(xgb.DMatrix(test), ntree_limit=gbm.best_iteration+1)
-    imp = get_importance(gbm,X_train.columns)
-    print ('importance array: ', imp)
-    out = pd.concat([testActivityId,pd.DataFrame(test_prediction.round())],axis = 1)
-    out.rename({0:'outcome'},axis = 1, inplace = True)
-    return out
-
-
-
-def Main():
-    train, test = Load_DataSet()
-    out = run(train,test)
-    out.to_csv('./submission7.csv',index = False)
-
-
-if __name__ == "__main__":
-    Main()
-
-
-
